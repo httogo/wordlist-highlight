@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.checked = l.enabled;
+      checkbox.title = `启用/禁用 ${l.name}`;
       checkbox.addEventListener('change', () => {
         l.enabled = checkbox.checked;
         saveLists(lists);
@@ -27,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function saveLists(lists) {
     chrome.runtime.sendMessage({type: "setLists", lists}, (res) => {
-      // 保存完成后可在此进行提示或刷新
+      console.log("Lists saved.");
     });
   }
 });

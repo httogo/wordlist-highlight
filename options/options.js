@@ -17,6 +17,9 @@ function loadLists() {
     if (selectedListIndex === null && currentLists.length > 0) {
       selectedListIndex = 0;
       renderSelectedList();
+    } else if (currentLists.length === 0) {
+      selectedListIndex = null;
+      clearSelectedListUI();
     }
   });
 }
@@ -27,10 +30,13 @@ function renderLists() {
   currentLists.forEach((l, idx) => {
     const div = document.createElement('div');
     div.textContent = l.name;
-    div.className = 'list-item';
+    div.style.padding = '5px';
+    div.style.cursor = 'pointer';
+    div.style.border = (idx === selectedListIndex) ? '1px solid #000' : '1px solid #ccc';
     div.addEventListener('click', () => {
       selectedListIndex = idx;
       renderSelectedList();
+      renderLists();
     });
     container.appendChild(div);
   });
@@ -39,15 +45,17 @@ function renderLists() {
 function renderSelectedList() {
   if (selectedListIndex === null) return;
   const list = currentLists[selectedListIndex];
+
   document.getElementById('list-name').value = list.name;
   document.getElementById('ignore-case').checked = list.matchRules.ignoreCase;
   document.getElementById('lemmatize').checked = list.matchRules.lemmatize;
 
   document.getElementById('color').value = list.highlightStyle.color || '#000000';
-  document.getElementById('bgColor').value = list.highlightStyle.backgroundColor || '#ffffff';
-  document.getElementById('bold').checked = list.highlightStyle.fontWeight === 'bold';
-  document.getElementById('underline').checked = list.highlightStyle.textDecoration === 'underline';
-  document.getElementById('strikethrough').checked = list.highlightStyle.textDecoration === 'line-through';
+  document.getElementById('bgColor').value = list.highlightStyle.backgroundColor || '#ffff00';
+  document.getElementById('bold').checked = (list.highlightStyle.fontWeight === 'bold');
+  const textDecoration = list.highlightStyle.textDecoration || 'none';
+  document.getElementById('underline').checked = (textDecoration === 'underline');
+  document.getElementById('strikethrough').checked = (textDecoration === 'line-through');
 
   const wordsContainer = document.getElementById('words-container');
   wordsContainer.innerHTML = '';
@@ -62,6 +70,7 @@ function renderSelectedList() {
     delBtn.addEventListener('click', () => {
       list.words.splice(i, 1);
       renderSelectedList();
+      saveLists();
     });
 
     item.appendChild(delBtn);
@@ -69,12 +78,30 @@ function renderSelectedList() {
   });
 }
 
+function clearSelectedListUI() {
+  document.getElementById('list-name').value = '';
+  document.getElementById('ignore-case').checked = false;
+  document.getElementById('lemmatize').checked = false;
+  document.getElementById('color').value = '#000000';
+  document.getElementById('bgColor').value = '#ffff00';
+  document.getElementById('bold').checked = false;
+  document.getElementById('underline').checked = false;
+  document.getElementById('strikethrough').checked = false;
+  document.getElementById('words-container').innerHTML = '';
+  document.getElementById('new-word').value = '';
+}
+
 function addNewList() {
   const newList = {
     id: 'list_' + Date.now(),
     name: '新列表',
     words: [],
-    highlightStyle: {},
+    highlightStyle: {
+      color: '#000000',
+      backgroundColor: '#ffff00',
+      fontWeight: 'normal',
+      textDecoration: 'none'
+    },
     matchRules: { ignoreCase: true, lemmatize: false },
     enabled: true
   };
@@ -89,7 +116,7 @@ function saveCurrentList() {
   list.name = document.getElementById('list-name').value;
   list.matchRules.ignoreCase = document.getElementById('ignore-case').checked;
   list.matchRules.lemmatize = document.getElementById('lemmatize').checked;
-  
+
   const color = document.getElementById('color').value;
   const bgColor = document.getElementById('bgColor').value;
   const bold = document.getElementById('bold').checked;
@@ -126,8 +153,7 @@ function addWordToCurrentList() {
 }
 
 function saveLists() {
-  chrome.storage.local.set({lists: currentLists}, () => {
-    renderLists();
-    renderSelectedList();
+  chrome.runtime.sendMessage({type: "setLists", lists: currentLists}, (res) => {
+    loadLists();
   });
 }
