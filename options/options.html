@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Word Lists Options</title>
+<link rel="stylesheet" href="options.css">
+</head>
+<body>
+<h1>单词列表管理</h1>
+<div id="lists-container"></div>
+<button id="add-list-btn">添加新列表</button>
+
+<h2>选中列表详情</h2>
+<div id="selected-list-container">
+  <input id="list-name" placeholder="列表名称"><br>
+  <label>忽略大小写 <input type="checkbox" id="ignore-case"></label><br>
+  <label>词形还原 <input type="checkbox" id="lemmatize"></label><br>
+  
+  <h3>高亮样式配置</h3>
+  字体颜色: <input type="color" id="color"><br>
+  背景颜色: <input type="color" id="bgColor"><br>
+  加粗: <input type="checkbox" id="bold"><br>
+  下划线: <input type="checkbox" id="underline"><br>
+  删除线: <input type="checkbox" id="strikethrough"><br>
+  
+  <h3>单词列表</h3>
+  <div id="words-container"></div>
+  <input id="new-word" placeholder="添加新单词">
+  <button id="add-word-btn">添加</button><br>
+
+  <button id="save-list-btn">保存列表</button>
+  <button id="delete-list-btn">删除列表</button>
+</div>
+
+<script src="../libs/compromise.min.js"></script>
+<script src="options.js"></script>
+</body>
+</html>
