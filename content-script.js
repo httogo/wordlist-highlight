@@ -1,8 +1,8 @@
 let currentLists = []; // 存储当前启用列表
 let highlighted = false; // 标记当前是否已高亮，用于判断是否需要清除
 
-(async function() {
-  currentLists = await getListsFromStorage();
+(async function () {
+  currentLists = await getListsFromBackground();
   applyHighlights();
 
   // 监听列表更新消息
@@ -13,7 +13,7 @@ let highlighted = false; // 标记当前是否已高亮，用于判断是否需�
       // 2. 重新从存储获取最新列表
       // 3. 再次执行高亮
       clearHighlights();
-      getListsFromStorage().then((lists) => {
+      getListsFromBackground().then((lists) => {
         currentLists = lists;
         applyHighlights();
       });
@@ -22,10 +22,10 @@ let highlighted = false; // 标记当前是否已高亮，用于判断是否需�
 })();
 
 // 获取列表数据
-function getListsFromStorage() {
-  return new Promise(resolve => {
-    chrome.storage.local.get(["lists"], (res) => {
-      resolve(res.lists || []);
+function getListsFromBackground() {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: "getLists" }, (response) => {
+      resolve(response.lists || []);
     });
   });
 }
@@ -76,17 +76,17 @@ function highlightText(text, lists) {
   const combinedWords = [];
   for (let list of lists) {
     for (let w of list.words) {
-      combinedWords.push({word: w, list});
+      combinedWords.push({ word: w, list });
     }
   }
 
   if (combinedWords.length === 0) return null;
 
   // 按长度排序，以避免短词影响长词匹配
-  combinedWords.sort((a,b) => b.word.length - a.word.length);
+  combinedWords.sort((a, b) => b.word.length - a.word.length);
 
   let currentText = text;
-  for (let {word, list} of combinedWords) {
+  for (let { word, list } of combinedWords) {
     let flags = list.matchRules.ignoreCase ? "gi" : "g";
     let regexWord = escapeRegExp(word);
     let regex = new RegExp(`\\b${regexWord}\\b`, flags);
@@ -125,7 +125,7 @@ function findMatchingList(word, combinedWords) {
     const target = list.matchRules.ignoreCase ? listWord.toLowerCase() : listWord;
     if (compare === target) return list;
   }
-  return combinedWords[0].list;
+  return null;
 }
 
 function applyHighlightStyle(elem, style) {

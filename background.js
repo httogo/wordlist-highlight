@@ -47,35 +47,33 @@ function rebuildContextMenus() {
     // 首先移除所有已存在的菜单项
     chrome.contextMenus.removeAll(() => {
         // 获取列表数据
-        chrome.storage.local.get(["lists"], (res) => {
-            const lists = res.lists || [];
-            if (lists.length > 0) {
-                // 创建父菜单项
-                chrome.contextMenus.create({
-                    id: "addToSpecificList",
-                    title: "添加选中单词到列表",
-                    contexts: ["selection"]
-                });
-
-                // 为每个列表创建子菜单项
-                lists.forEach((list) => {
+        getStorageArea((storage) => {
+            storage.get(["lists"], (res) => {
+                const lists = res.lists || [];
+                if (lists.length > 0) {
                     chrome.contextMenus.create({
-                        id: `addToList_${list.id}`,
-                        title: list.name,
-                        contexts: ["selection"],
-                        parentId: "addToSpecificList"
+                        id: "addToSpecificList",
+                        title: "添加选中单词到列表",
+                        contexts: ["selection"]
                     });
-                });
-            } else {
-                // 如果没有列表，则不创建父子菜单结构或者
-                // 可创建一个灰色菜单提示用户无列表。
-                chrome.contextMenus.create({
-                    id: "noListAvailable",
-                    title: "暂无列表，请在选项中创建",
-                    contexts: ["selection"],
-                    enabled: false
-                });
-            }
+
+                    lists.forEach((list) => {
+                        chrome.contextMenus.create({
+                            id: `addToList_${list.id}`,
+                            title: list.name,
+                            contexts: ["selection"],
+                            parentId: "addToSpecificList"
+                        });
+                    });
+                } else {
+                    chrome.contextMenus.create({
+                        id: "noListAvailable",
+                        title: "暂无列表，请在选项中创建",
+                        contexts: ["selection"],
+                        enabled: false
+                    });
+                }
+            });
         });
     });
 }
@@ -90,19 +88,20 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         const listId = menuItemId.replace("addToList_", "");
         const selectedWord = selectionText.trim();
 
-        chrome.storage.local.get(["lists"], (res) => {
-            let lists = res.lists || [];
-            const targetList = lists.find(l => l.id === listId);
-            if (targetList) {
-                targetList.words.push(selectedWord);
-                chrome.storage.local.set({ lists }, () => {
-                    console.log(`已将 "${selectedWord}" 添加到列表 "${targetList.name}"`);
-                    // 在此处通知所有 tab 更新高亮
-                    notifyAllTabsListsUpdated();
-                });
-            } else {
-                console.log("未找到指定的列表，可能已被删除。");
-            }
+        getStorageArea((storage) => {
+            storage.get(["lists"], (res) => {
+                let lists = res.lists || [];
+                const targetList = lists.find(l => l.id === listId);
+                if (targetList) {
+                    targetList.words.push(selectedWord);
+                    storage.set({ lists }, () => {
+                        console.log(`已将 "${selectedWord}" 添加到列表 "${targetList.name}"`);
+                        notifyAllTabsListsUpdated();
+                    });
+                } else {
+                    console.log("未找到指定的列表，可能已被删除。");
+                }
+            });
         });
     }
 });

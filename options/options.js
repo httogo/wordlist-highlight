@@ -194,7 +194,7 @@ function exportLists() {
   const extensionVersion = manifest.version; // 例如 "1.0.3"
 
   chrome.runtime.sendMessage({ type: "getLists" }, (response) => {
-    const data = { 
+    const data = {
       version: extensionVersion,  // 使用扩展版本号作为文件版本号
       lists: response.lists || []
     };
@@ -205,7 +205,7 @@ function exportLists() {
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = `word_lists_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `word_lists_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
 
     URL.revokeObjectURL(url);
@@ -215,7 +215,7 @@ function exportLists() {
 function handleFileImport(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
@@ -242,7 +242,7 @@ function handleFileImport(event) {
       showImportStatus("JSON 解析失败：" + err.message, true);
     }
   };
-  
+
   reader.readAsText(file);
 }
 
@@ -276,9 +276,9 @@ function calculateDifferences(currentLists, importLists) {
     const existingList = currentListsById[importList.id];
     if (!existingList) {
       newListsCount++;
-      newWordsCount += importList.words ? importList.words.length : 0;
+      newWordsCount += (importList.words || []).length;
     } else {
-      const currentWordsSet = new Set(existingList.words.map(w => w.word));
+      const currentWordsSet = new Set(existingList.words);
       const importedWords = importList.words || [];
       importedWords.forEach(w => {
         if (!currentWordsSet.has(w.word)) {
@@ -301,11 +301,11 @@ function importListsData(currentLists, importLists) {
       currentLists.push(importList);
       currentListsById[importList.id] = importList;
     } else {
-      const currentWordsMap = new Map(existingList.words.map(w => [w.word, w]));
+      const currentWordsMap = new Map(existingList.words.map(w => [w, w]));
       (importList.words || []).forEach(w => {
-        if (!currentWordsMap.has(w.word)) {
+        if (!currentWordsMap.has(w)) {
           existingList.words.push(w);
-          currentWordsMap.set(w.word, w);
+          currentWordsMap.set(w, w);
         }
       });
     }

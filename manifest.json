@@ -1,8 +1,8 @@
 {
-  "name": "Word Highlighter",
-  "version": "0.5",
+  "name": "词表高亮",
+  "version": "0.6",
   "manifest_version": 3,
-  "description": "Highlight words from multiple lists on any webpage.",
+  "description": "浏览网页时使用自定义风格高亮你的单词列表",
   "permissions": [
     "storage",
     "contextMenus",
@@ -34,15 +34,5 @@
   ],
   "host_permissions": [
     "<all_urls>"
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "lib/compromise.min.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
   ]
 }
