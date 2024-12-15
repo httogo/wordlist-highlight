@@ -19,6 +19,19 @@
         <button id="add-list-btn" class="primary-btn">添加新列表</button>
       </div>
       <div id="lists-container" class="lists-container"></div>
+
+      <h2>同步设置</h2>
+      <div class="sync-settings-box">
+        <label style="display:flex;align-items:center;gap:5px;">
+          <input type="checkbox" id="use-sync-storage" />
+          使用云同步
+        </label>
+        <p class="sync-note" style="font-size:14px;color:#666;margin-top:5px;">
+          使用云同步可在同账号下的多个设备间共享列表数据，<br>
+          但有约 100 KB 的存储限制。
+        </p>
+      </div>
+
       <h2>数据导入导出</h2>
       <div class="import-export-box">
         <button id="export-btn" class="secondary-btn">导出所有列表</button>

@@ -1,8 +1,17 @@
 let currentLists = [];
 let selectedListIndex = null;
+let useSyncStorage = false; // 新增变量记录用户偏好
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadLists();
+  // 读取useSyncStorage状态
+  chrome.storage.local.get(["useSyncStorage"], (res) => {
+    useSyncStorage = (res.useSyncStorage === true);
+    document.getElementById('use-sync-storage').checked = useSyncStorage;
+    // 加载列表
+    loadLists();
+  });
+
+  document.getElementById('use-sync-storage').addEventListener('change', onUseSyncStorageChange);
 
   document.getElementById('add-list-btn').addEventListener('click', addNewList);
   document.getElementById('save-list-btn').addEventListener('click', saveCurrentList);
@@ -17,11 +26,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // 文件选择框事件
   document.getElementById('import-file-input').addEventListener('change', handleFileImport);
+
+  // 云同步开关事件
+  document.getElementById('use-sync-storage').addEventListener('change', (e) => {
+    useSyncStorage = e.target.checked;
+    chrome.storage.local.set({ useSyncStorage }, () => {
+      // 状态更新后重新加载列表，以从对应存储读取数据
+      loadLists();
+    });
+  });
 });
 
 function loadLists() {
-  chrome.storage.local.get(["lists"], (res) => {
-    currentLists = res.lists || [];
+  // 根据useSyncStorage发送消息getLists
+  chrome.runtime.sendMessage({ type: "getLists" }, (response) => {
+    currentLists = response.lists || [];
     renderLists();
     if (selectedListIndex === null && currentLists.length > 0) {
       selectedListIndex = 0;
@@ -163,47 +182,41 @@ function addWordToCurrentList() {
 
 function saveLists() {
   chrome.runtime.sendMessage({ type: "setLists", lists: currentLists }, (res) => {
-    loadLists();
+    if (res && res.success) {
+      loadLists();
+    }
   });
 }
 
 function exportLists() {
-  chrome.storage.local.get(["lists"], (res) => {
-    const data = { 
-      version: "1.0", 
-      lists: res.lists || [] 
-    };
+  // 导出时同样通过消息获取最新列表
+  chrome.runtime.sendMessage({ type: "getLists" }, (response) => {
+    const data = { version: "1.0", lists: response.lists || [] };
     const jsonStr = JSON.stringify(data, null, 2);
-    
+
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
-    a.download = `word_lists_${new Date().toISOString().slice(0,10)}.json`; 
+    a.download = `word_lists_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
-    
+
     URL.revokeObjectURL(url);
   });
 }
 
 function handleFileImport(event) {
   const file = event.target.files[0];
-  if (!file) return; // 用户取消选择
-  
+  if (!file) return;
+
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const content = e.target.result;
       const parsed = JSON.parse(content);
 
-      // 检查版本字段
-      if (!parsed.version) {
-        console.warn("导入数据无版本号，将按兼容模式处理");
-      }
-
       if (Array.isArray(parsed.lists)) {
-        // 显示导入预览信息并让用户确认
         previewImport(parsed.lists);
       } else {
         showImportStatus("导入的 JSON 文件格式不正确：缺少 lists 数组", true);
@@ -212,21 +225,20 @@ function handleFileImport(event) {
       showImportStatus("JSON 解析失败：" + err.message, true);
     }
   };
-  
+
   reader.readAsText(file);
 }
 
 function previewImport(importLists) {
-  // 从本地获取当前列表
-  chrome.storage.local.get(["lists"], (res) => {
-    const currentLists = res.lists || [];
+  // 先获取当前列表
+  chrome.runtime.sendMessage({ type: "getLists" }, (response) => {
+    const currentLists = response.lists || [];
     const { newListsCount, newWordsCount } = calculateDifferences(currentLists, importLists);
 
-    // 显示摘要信息
     const msg = `即将导入数据：\n` +
-                `新增列表数: ${newListsCount}\n` +
-                `新增单词数: ${newWordsCount}\n` +
-                `是否确认继续导入？`;
+      `新增列表数: ${newListsCount}\n` +
+      `新增单词数: ${newWordsCount}\n` +
+      `是否确认继续导入？`;
     const confirmed = confirm(msg);
     if (confirmed) {
       importListsData(currentLists, importLists);
@@ -240,23 +252,19 @@ function calculateDifferences(currentLists, importLists) {
   let newListsCount = 0;
   let newWordsCount = 0;
 
-  // 将当前列表索引化，方便查找
   const currentListsById = {};
   currentLists.forEach(l => { currentListsById[l.id] = l; });
 
   importLists.forEach(importList => {
     const existingList = currentListsById[importList.id];
     if (!existingList) {
-      // 全新列表的所有单词都算新增
       newListsCount++;
       newWordsCount += importList.words ? importList.words.length : 0;
     } else {
-      // 合并模式：查找不重复的新单词数
       const currentWordsSet = new Set(existingList.words.map(w => w.word));
       const importedWords = importList.words || [];
       importedWords.forEach(w => {
         if (!currentWordsSet.has(w.word)) {
-          // 这是新单词
           newWordsCount++;
         }
       });
@@ -267,54 +275,34 @@ function calculateDifferences(currentLists, importLists) {
 }
 
 function importListsData(currentLists, importLists) {
-  // 在这里执行合并策略：
-  // 1. 将导入列表与本地列表按 id 匹配
-  // 2. 如果本地不存在该列表，直接添加
-  // 3. 如果存在则合并单词，对重复单词进行去重
-  
   const currentListsById = {};
   currentLists.forEach(l => { currentListsById[l.id] = l; });
 
   importLists.forEach(importList => {
     const existingList = currentListsById[importList.id];
     if (!existingList) {
-      // 新列表，直接添加
       currentLists.push(importList);
       currentListsById[importList.id] = importList;
     } else {
-      // 合并单词
       const currentWordsMap = new Map(existingList.words.map(w => [w.word, w]));
       (importList.words || []).forEach(w => {
         if (!currentWordsMap.has(w.word)) {
-          // 添加新单词
           existingList.words.push(w);
           currentWordsMap.set(w.word, w);
-        } else {
-          // 已存在该单词，可根据需要合并字段 
-          // 此处简化为不覆盖旧字段。可扩展为合并注释、翻译等。
         }
       });
-
-      // 可考虑合并 matchRules 或 highlightStyle，如不需要则保持本地配置
-      // existingList.matchRules = { ...existingList.matchRules, ...importList.matchRules } 等逻辑
     }
   });
 
-  // 存储合并后的数据
   applyImportData(currentLists);
 }
 
 function applyImportData(newListsData) {
-  chrome.storage.local.set({ lists: newListsData }, () => {
-    showImportStatus("列表已成功导入并合并", false);
-    // 导入后重新加载列表数据刷新UI
-    loadLists();
-    // 通知 content script 更新
-    chrome.runtime.sendMessage({type: "setLists", lists: newListsData}, (res) => {
-      if (!res.success) {
-        console.warn("导入后通知更新失败");
-      }
-    });
+  chrome.runtime.sendMessage({ type: "setLists", lists: newListsData }, (res) => {
+    if (res && res.success) {
+      showImportStatus("列表已成功导入并合并", false);
+      loadLists();
+    }
   });
 }
 
@@ -322,4 +310,104 @@ function showImportStatus(msg, isError) {
   const statusDiv = document.getElementById('import-status');
   statusDiv.textContent = msg;
   statusDiv.style.color = isError ? '#cc0000' : '#008000';
+}
+
+function onUseSyncStorageChange(e) {
+  const newMode = e.target.checked; // true表示云同步，false表示本地
+  if (newMode === useSyncStorage) return; // 没有实际改变
+
+  if (newMode === true) {
+    // 从本地切换到云：合并本地和云数据
+    Promise.all([
+      getLocalLists(),
+      getSyncLists()
+    ]).then(([localLists, syncLists]) => {
+      const merged = mergeListsData(localLists, syncLists);
+      chrome.storage.sync.set({ lists: merged }, () => {
+        chrome.storage.local.set({ useSyncStorage: true }, () => {
+          useSyncStorage = true;
+          loadLists(); // 此时将从sync获取数据
+        });
+      });
+    });
+  } else {
+    // 从云切换到本地：合并云和本地数据
+    Promise.all([
+      getSyncLists(),
+      getLocalLists()
+    ]).then(([syncLists, localLists]) => {
+      const merged = mergeListsData(localLists, syncLists);
+      chrome.storage.local.set({ lists: merged }, () => {
+        chrome.storage.local.set({ useSyncStorage: false }, () => {
+          useSyncStorage = false;
+          loadLists(); // 此时从local获取数据
+        });
+      });
+    });
+  }
+}
+
+// 获取本地lists
+function getLocalLists() {
+  return new Promise(resolve => {
+    chrome.storage.local.get(["lists"], (res) => {
+      resolve(res.lists || []);
+    });
+  });
+}
+
+// 获取云端lists
+function getSyncLists() {
+  return new Promise(resolve => {
+    chrome.storage.sync.get(["lists"], (res) => {
+      resolve(res.lists || []);
+    });
+  });
+}
+
+// 合并两个列表数组的数据，不重复添加同一单词
+function mergeListsData(listsA, listsB) {
+  // 使用map存储列表，根据id索引
+  const map = new Map();
+  // 先将listsA的所有列表放入map
+  for (const l of listsA) {
+    map.set(l.id, {
+      ...l,
+      words: l.words ? [...l.words] : []
+    });
+  }
+
+  // 再遍历listsB，合并到map中
+  for (const l of listsB) {
+    if (!map.has(l.id)) {
+      // 全新列表直接添加
+      map.set(l.id, {
+        ...l,
+        words: l.words ? [...l.words] : []
+      });
+    } else {
+      // 合并同id列表
+      const existing = map.get(l.id);
+      const existingWordsMap = new Map(existing.words.map(w => [w.word, w]));
+
+      // 合并新列表的words
+      for (const w of (l.words || [])) {
+        if (!existingWordsMap.has(w.word)) {
+          existing.words.push(w);
+          existingWordsMap.set(w.word, w);
+        }
+        // 如果存在相同word，可在此实现字段合并逻辑（如notes合并）
+        // 示例中略过此步
+      }
+
+      // 可选择合并matchRules、highlightStyle等字段，以后需要可补充
+      // 如果需以B的规则覆盖A的则:
+      // existing.matchRules = { ...existing.matchRules, ...l.matchRules };
+      // existing.highlightStyle = { ...existing.highlightStyle, ...l.highlightStyle };
+
+      map.set(l.id, existing);
+    }
+  }
+
+  return Array.from(map.values());
 }

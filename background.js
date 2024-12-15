@@ -9,22 +9,26 @@ chrome.runtime.onInstalled.addListener(() => {
 // 当接收到更新列表请求时或在其他需要时，可调用该函数重建右键菜单
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "getLists") {
-        chrome.storage.local.get(["lists"], (res) => {
-            sendResponse({ lists: res.lists || [] });
+        // 根据useSyncStorage决定从哪个存储中读取
+        getStorageArea((storage) => {
+            storage.get(["lists"], (res) => {
+                sendResponse({ lists: res.lists || [] });
+            });
         });
         return true;
     } else if (message.type === "setLists") {
-        chrome.storage.local.set({ lists: message.lists }, () => {
-            // 列表更新完成后，通知所有 tab 的 content script 进行更新
-            notifyAllTabsListsUpdated();
-            // 列表更新后重新构建右键菜单
-            rebuildContextMenus();
-            sendResponse({ success: true });
+        getStorageArea((storage) => {
+            storage.set({ lists: message.lists }, () => {
+                // 列表更新完成后，通知所有 tab 的 content script 进行更新
+                notifyAllTabsListsUpdated();
+                // 列表更新后重新构建右键菜单
+                rebuildContextMenus();
+                sendResponse({ success: true });
+            });
         });
         return true;
     }
 });
-
 
 // 初始化列表为空
 function initializeListsIfEmpty() {
@@ -105,13 +109,21 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // 通知所有 tab 列表已更新，让 content script 刷新高亮
 function notifyAllTabsListsUpdated() {
-  chrome.tabs.query({}, (tabs) => {
-    for (let t of tabs) {
-      chrome.tabs.sendMessage(t.id, { type: "listsUpdated" }, (response) => {
-        if (chrome.runtime.lastError) {
-            console.warn("无法向此标签页发送消息：", chrome.runtime.lastError.message);
+    chrome.tabs.query({}, (tabs) => {
+        for (let t of tabs) {
+            chrome.tabs.sendMessage(t.id, { type: "listsUpdated" }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.warn("无法向此标签页发送消息：", chrome.runtime.lastError.message);
+                }
+            });
         }
-      });
-    }
-  });
+    });
+}
+
+function getStorageArea(callback) {
+    // 从local中读取useSyncStorage
+    chrome.storage.local.get(["useSyncStorage"], (res) => {
+        const useSync = res.useSyncStorage === true;
+        callback(useSync ? chrome.storage.sync : chrome.storage.local);
+    });
 }

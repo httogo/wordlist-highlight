@@ -163,3 +163,18 @@ header h1 {
 .danger-btn:hover {
   background: #b30000;
 }
+
+.sync-settings-box {
+  background: #fff;
+  border-radius: 4px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.sync-settings-box label input[type="checkbox"] {
+  transform: scale(1.1);
+}
+
+.sync-note {
+  margin-left: 24px; /* 保证文字与checkbox对齐 */
+}
