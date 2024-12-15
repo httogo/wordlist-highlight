@@ -189,9 +189,15 @@ function saveLists() {
 }
 
 function exportLists() {
-  // 导出时同样通过消息获取最新列表
+  // 获取扩展版本号
+  const manifest = chrome.runtime.getManifest();
+  const extensionVersion = manifest.version; // 例如 "1.0.3"
+
   chrome.runtime.sendMessage({ type: "getLists" }, (response) => {
-    const data = { version: "1.0", lists: response.lists || [] };
+    const data = { 
+      version: extensionVersion,  // 使用扩展版本号作为文件版本号
+      lists: response.lists || []
+    };
     const jsonStr = JSON.stringify(data, null, 2);
 
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -199,7 +205,7 @@ function exportLists() {
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = `word_lists_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `word_lists_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
 
     URL.revokeObjectURL(url);
@@ -209,12 +215,23 @@ function exportLists() {
 function handleFileImport(event) {
   const file = event.target.files[0];
   if (!file) return;
-
+  
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const content = e.target.result;
       const parsed = JSON.parse(content);
+
+      if (!parsed.version) {
+        // 如果文件中没有 version 字段，可以记录日志或给出警告
+        console.warn("导入文件无版本号，将使用兼容模式处理");
+      } else {
+        // 获取扩展版本
+        const manifest = chrome.runtime.getManifest();
+        const extensionVersion = manifest.version;
+        console.log(`导入文件版本号: ${parsed.version}, 当前扩展版本号: ${extensionVersion}`);
+        // 如果需要根据版本号进行特殊处理（如兼容旧结构），可在此判断版本差异
+      }
 
       if (Array.isArray(parsed.lists)) {
         previewImport(parsed.lists);
@@ -225,7 +242,7 @@ function handleFileImport(event) {
       showImportStatus("JSON 解析失败：" + err.message, true);
     }
   };
-
+  
   reader.readAsText(file);
 }
 
