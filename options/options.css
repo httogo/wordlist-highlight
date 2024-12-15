@@ -1,0 +1,165 @@
+body {
+  font-family: sans-serif;
+  background: #ffffff;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  box-sizing: border-box;
+}
+
+header {
+  background: #007ACC;
+  color: #fff;
+  padding: 15px;
+}
+header h1 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.main-content {
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* 面板布局 */
+.lists-panel, .details-panel {
+  flex: 1;
+  background: #f5f5f5;
+  border-radius: 4px;
+  padding: 15px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* 列表区域 */
+.lists-container > div {
+  padding: 10px;
+  background: #fff;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.lists-container > div:hover {
+  background: #eaeaea;
+}
+
+/* 详情区域 */
+.details-panel h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.detail-box {
+  background: #fff;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.detail-box label {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+.detail-box input[type="checkbox"] {
+  margin-right: 5px;
+}
+
+.text-input {
+  display: block;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.style-config {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.words-box {
+  min-height: 30px;
+  border: 1px solid #ccc;
+  padding: 5px;
+  border-radius: 4px;
+  background: #fafafa;
+  margin-bottom: 10px;
+}
+
+.words-box > div {
+  padding: 5px;
+  margin: 5px 0;
+  background: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+.words-box > div:hover {
+  background: #eaeaea;
+}
+.words-box button {
+  margin-left: auto;
+}
+
+/* 添加单词行 */
+.add-word-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* 行为按钮 */
+.action-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* 按钮样式 */
+.primary-btn, .secondary-btn, .danger-btn {
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.primary-btn {
+  background: #007ACC;
+  color: #fff;
+}
+.primary-btn:hover {
+  background: #006bb8;
+}
+
+.secondary-btn {
+  background: #eeeeee;
+  color: #333;
+}
+.secondary-btn:hover {
+  background: #dddddd;
+}
+
+.danger-btn {
+  background: #cc0000;
+  color: #fff;
+}
+.danger-btn:hover {
+  background: #b30000;
+}

@@ -153,7 +153,7 @@ function addWordToCurrentList() {
 }
 
 function saveLists() {
-  chrome.runtime.sendMessage({type: "setLists", lists: currentLists}, (res) => {
+  chrome.runtime.sendMessage({ type: "setLists", lists: currentLists }, (res) => {
     loadLists();
   });
 }

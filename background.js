@@ -107,7 +107,11 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 function notifyAllTabsListsUpdated() {
   chrome.tabs.query({}, (tabs) => {
     for (let t of tabs) {
-      chrome.tabs.sendMessage(t.id, { type: "listsUpdated" });
+      chrome.tabs.sendMessage(t.id, { type: "listsUpdated" }, (response) => {
+        if (chrome.runtime.lastError) {
+            console.warn("无法向此标签页发送消息：", chrome.runtime.lastError.message);
+        }
+      });
     }
   });
 }

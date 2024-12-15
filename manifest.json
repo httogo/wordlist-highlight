@@ -1,6 +1,6 @@
 {
   "name": "Word Highlighter",
-  "version": "0.1",
+  "version": "0.3",
   "manifest_version": 3,
   "description": "Highlight words from multiple lists on any webpage.",
   "permissions": [
