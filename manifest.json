@@ -1,6 +1,6 @@
 {
     "name": "词表高亮",
-    "version": "0.8.0",
+    "version": "0.8.1",
     "manifest_version": 3,
     "description": "浏览网页时使用自定义风格高亮你的单词列表",
     "permissions": [

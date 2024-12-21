@@ -1,4 +1,4 @@
-// content/content-script.js
+// content-script.js
 
 let currentLists = [];
 let highlighted = false;
@@ -70,10 +70,10 @@ function escapeRegExp(string) {
 
 function findMatchingList(word, combinedWords) {
     for (let cw of combinedWords) {
-        let { list, word: listWord } = cw;
+        let { word: listWord, list, comment } = cw;
         const compare = list.matchRules.ignoreCase ? word.toLowerCase() : word;
         const target = list.matchRules.ignoreCase ? listWord.toLowerCase() : listWord;
-        if (compare === target) return list;
+        if (compare === target) return { list, comment };
     }
     return null;
 }
@@ -107,7 +107,7 @@ function highlightText(text, lists) {
     const combinedWords = [];
     for (let list of lists) {
         for (let w of list.words) {
-            combinedWords.push({ word: w, list });
+            combinedWords.push({ word: w.word, comment: w.comment, list });
         }
     }
 
@@ -131,14 +131,20 @@ function highlightText(text, lists) {
     parts.forEach(part => {
         if (part.match(/\uE000.*?\uE001/)) {
             const raw = part.replace(/\uE000|\uE001/g, '');
-            const matchedList = findMatchingList(raw, combinedWords);
+            const matched = combinedWords.find(cw => cw.word === raw);
             const span = document.createElement("span");
             span.className = 'word-highlight';
             span.setAttribute('data-original', raw);
-            if (matchedList) {
-                applyHighlightStyle(span, matchedList.highlightStyle);
+            if (matched) {
+                if (matched.list) {
+                    applyHighlightStyle(span, matched.list.highlightStyle);
+                }
+                span.textContent = raw;
+                if (matched.comment) {
+                    span.title = matched.comment; // 设置 title 属性以显示注释
+                }
             }
-            span.textContent = raw;
+
             fragment.appendChild(span);
         } else {
             fragment.appendChild(document.createTextNode(part));

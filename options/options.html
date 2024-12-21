@@ -71,12 +71,8 @@
           <label for="strikethrough"><input type="checkbox" id="strikethrough"> 删除线</label>
         </div>
         <h3>单词列表</h3>
-        <div id="words-container" class="words-box"></div>
-
-        <div class="add-word-row">
-          <input id="new-word" placeholder="添加新单词" class="text-input">
-          <button id="add-word-btn" class="secondary-btn" aria-label="添加单词">添加</button>
-        </div>
+        <!-- 替换 words-container 和 add-word-row 为可编辑的文本框 -->
+        <textarea id="words-textarea" class="words-textarea" placeholder="每行一个单词，可选使用#添加注释，例如：word #commit"></textarea>
 
       </div>
     </section>

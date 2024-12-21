@@ -1,3 +1,4 @@
+// options/options.js
 let currentLists = [];
 let selectedListIndex = null;
 let useSyncStorage = false; // 新增变量记录用户偏好
@@ -17,7 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('add-list-btn').addEventListener('click', addNewList);
     document.getElementById('delete-list-btn').addEventListener('click', deleteCurrentList);
-    document.getElementById('add-word-btn').addEventListener('click', addWordToCurrentList);
+    // 移除 add-word-btn 相关事件
+    // document.getElementById('add-word-btn').addEventListener('click', addWordToCurrentList);
     // 导出按钮事件
     document.getElementById('export-btn').addEventListener('click', exportLists);
     // 导入按钮事件
@@ -45,6 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('bold').addEventListener('change', () => autoSave('bold'));
     document.getElementById('underline').addEventListener('change', () => autoSave('underline'));
     document.getElementById('strikethrough').addEventListener('change', () => autoSave('strikethrough'));
+    // 新增：监听文本区域的输入事件进行自动保存
+    document.getElementById('words-textarea').addEventListener('input', () => autoSave('words'));
 });
 
 function loadLists() {
@@ -102,24 +106,10 @@ function renderSelectedList() {
     document.getElementById('underline').checked = (textDecoration === 'underline');
     document.getElementById('strikethrough').checked = (textDecoration === 'line-through');
 
-    const wordsContainer = document.getElementById('words-container');
-    wordsContainer.innerHTML = '';
-    list.words.forEach((w, i) => {
-        const item = document.createElement('div');
-        item.textContent = w;
-
-        const delBtn = document.createElement('button');
-        delBtn.textContent = '删除';
-        delBtn.style.marginLeft = '10px';
-        delBtn.addEventListener('click', () => {
-            list.words.splice(i, 1);
-            renderSelectedList();
-            saveLists();
-        });
-
-        item.appendChild(delBtn);
-        wordsContainer.appendChild(item);
-    });
+    const textarea = document.getElementById('words-textarea');
+    // 将单词和注释格式化为每行一个单词，支持#添加注释
+    const wordsLines = list.words.map(w => w.comment ? `${w.word} #${w.comment}` : w.word);
+    textarea.value = wordsLines.join('\n');
 }
 
 function clearSelectedListUI() {
@@ -136,45 +126,63 @@ function addNewList() {
     };
     currentLists.push(newList);
     selectedListIndex = currentLists.length - 1;
-    saveLists();
+    saveLists(true);
 }
 
 function deleteCurrentList() {
     if (selectedListIndex === null) return;
     currentLists.splice(selectedListIndex, 1);
     selectedListIndex = currentLists.length > 0 ? 0 : null;
-    saveLists();
-}
-
-function addWordToCurrentList() {
-    const wordInput = document.getElementById('new-word');
-    const newWord = wordInput.value.trim();
-    if (newWord && selectedListIndex !== null) {
-        currentLists[selectedListIndex].words.push(newWord);
-        wordInput.value = '';
-        renderSelectedList();
-        saveLists();
-    }
+    saveLists(false);
 }
 
 function autoSave(key) {
     if (selectedListIndex === null) return;
     const list = currentLists[selectedListIndex];
 
-    if (key === 'name') list.name = document.getElementById('list-name').value;
-    else if (key === 'ignoreCase') list.matchRules.ignoreCase = document.getElementById('ignore-case').checked;
-    else if (key === 'lemmatize') list.matchRules.lemmatize = document.getElementById('lemmatize').checked;
-    else if (key === 'color') list.highlightStyle.color = document.getElementById('color').value;
-    else if (key === 'bgColor') list.highlightStyle.backgroundColor = document.getElementById('bgColor').value;
-    else if (key === 'bold') list.highlightStyle.fontWeight = document.getElementById('bold').checked ? 'bold' : 'normal';
-    else if (key === 'underline') list.highlightStyle.textDecoration = 'underline';
-    else if (key === 'strikethrough') list.highlightStyle.textDecoration = 'line-through';
+    if (key === 'name') {
+        list.name = document.getElementById('list-name').value;
+    }
+    else if (key === 'ignoreCase') {
+        list.matchRules.ignoreCase = document.getElementById('ignore-case').checked;
+    }
+    else if (key === 'lemmatize') {
+        list.matchRules.lemmatize = document.getElementById('lemmatize').checked;
+    }
+    else if (key === 'color') {
+        list.highlightStyle.color = document.getElementById('color').value;
+    }
+    else if (key === 'bgColor') {
+        list.highlightStyle.backgroundColor = document.getElementById('bgColor').value;
+    }
+    else if (key === 'bold') {
+        list.highlightStyle.fontWeight = document.getElementById('bold').checked ? 'bold' : 'normal';
+    }
+    else if (key === 'underline') {
+        list.highlightStyle.textDecoration = 'underline';
+    }
+    else if (key === 'strikethrough') {
+        list.highlightStyle.textDecoration = 'line-through';
+    }
+    else if (key === 'words') {
+        const textarea = document.getElementById('words-textarea').value;
+        const lines = textarea.split('\n');
+        const parsedWords = lines.map(line => {
+            const [wordPart, commentPart] = line.split('#').map(part => part.trim());
+            return { word: wordPart, comment: commentPart || '' };
+        }).filter(w => w.word); // 过滤掉空行
+        list.words = parsedWords;
+    }
 
-    saveLists();
+    saveLists(false);
 }
 
-function saveLists() {
-    chrome.runtime.sendMessage({ type: "setLists", lists: currentLists }, () => loadLists());
+function saveLists(shouldReload = false) {
+    chrome.runtime.sendMessage({ type: "setLists", lists: currentLists }, () => {
+        if (shouldReload) {
+            loadLists();
+        }
+    });
 }
 
 function exportLists() {
@@ -267,7 +275,7 @@ function calculateDifferences(currentLists, importLists) {
             newListsCount++;
             newWordsCount += (importList.words || []).length;
         } else {
-            const currentWordsSet = new Set(existingList.words);
+            const currentWordsSet = new Set(existingList.words.map(w => w.word));
             const importedWords = importList.words || [];
             importedWords.forEach(w => {
                 if (!currentWordsSet.has(w.word)) {
@@ -290,13 +298,22 @@ function importListsData(currentLists, importLists) {
             currentLists.push(importList);
             currentListsById[importList.id] = importList;
         } else {
-            const currentWordsMap = new Map(existingList.words.map(w => [w, w]));
+            const currentWordsMap = new Map(existingList.words.map(w => [w.word, w]));
             (importList.words || []).forEach(w => {
-                if (!currentWordsMap.has(w)) {
+                if (!currentWordsMap.has(w.word)) {
                     existingList.words.push(w);
-                    currentWordsMap.set(w, w);
+                    currentWordsMap.set(w.word, w);
                 }
+                // 如果存在相同word，可在此实现字段合并逻辑（如notes合并）
+                // 示例中略过此步
             });
+
+            // 可选择合并matchRules、highlightStyle等字段，以后需要可补充
+            // 如果需以B的规则覆盖A的则:
+            // existing.matchRules = { ...existing.matchRules, ...l.matchRules };
+            // existing.highlightStyle = { ...existing.highlightStyle, ...l.highlightStyle };
+
+            // 已在 calculateDifferences 中处理
         }
     });
 
@@ -393,13 +410,13 @@ function mergeListsData(listsA, listsB) {
             });
         } else {
             // 合并同id列表
-            const existing = map.get(l.id);
-            const existingWordsMap = new Map(existing.words.map(w => [w.word, w]));
+            const existingList = map.get(l.id);
+            const existingWordsMap = new Map(existingList.words.map(w => [w.word, w]));
 
             // 合并新列表的words
             for (const w of (l.words || [])) {
                 if (!existingWordsMap.has(w.word)) {
-                    existing.words.push(w);
+                    existingList.words.push(w);
                     existingWordsMap.set(w.word, w);
                 }
                 // 如果存在相同word，可在此实现字段合并逻辑（如notes合并）
@@ -411,7 +428,7 @@ function mergeListsData(listsA, listsB) {
             // existing.matchRules = { ...existing.matchRules, ...l.matchRules };
             // existing.highlightStyle = { ...existing.highlightStyle, ...l.highlightStyle };
 
-            map.set(l.id, existing);
+            map.set(l.id, existingList);
         }
     }
 

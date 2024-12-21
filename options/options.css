@@ -132,11 +132,7 @@ header h1 {
 }
 
 /* 添加单词行 */
-.add-word-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
+/* 已移除 */
 
 /* 按钮样式 */
 .primary-btn,
@@ -199,59 +195,73 @@ header h1 {
   /* 使用 CSS 变量 */
 }
 
+/* 新增样式：可编辑的文本框 */
+.words-textarea {
+  width: 100%;
+  height: 300px;
+  box-sizing: border-box;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  resize: vertical;
+}
+
 .list-name-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .list-name-row label {
-    margin-top: 0;
-    line-height: 32px; /* 或使用下面的方式 */
-    /* height: 32px;
+  margin-top: 0;
+  line-height: 32px;
+  /* 或使用下面的方式 */
+  /* height: 32px;
     display: inline-flex;
     align-items: center; */
 }
 
 #delete-list-btn {
-    padding: 6px 10px;
-    font-size: 14px;
+  padding: 6px 10px;
+  font-size: 14px;
 }
 
 .text-input {
-    height: 32px;
-    box-sizing: border-box;
-    /* ... 其他文本输入框样式 ... */
+  height: 32px;
+  box-sizing: border-box;
+  /* ... 其他文本输入框样式 ... */
 }
 
 .style-config {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 .color-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
 }
 
 .color-row label {
-    margin: 0;
-    line-height: 32px;
+  margin: 0;
+  line-height: 32px;
 }
 
 .text-decoration-row {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 10px;
 }
 
 .text-decoration-row label {
-    margin: 0;
+  margin: 0;
 }
 
 .text-decoration-row label input[type="checkbox"] {
-    margin-right: 5px;
+  margin-right: 5px;
 }
