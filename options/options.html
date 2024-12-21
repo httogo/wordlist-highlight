@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 
 <head>
   <meta charset="UTF-8">
-  <title>Word Lists Options</title>
+  <title>单词列表管理</title>
   <link rel="stylesheet" href="options.css">
 </head>
 
@@ -16,68 +16,68 @@
     <section class="lists-panel">
       <div class="panel-header">
         <h2>所有列表</h2>
-        <button id="add-list-btn" class="primary-btn">添加新列表</button>
+        <button id="add-list-btn" class="primary-btn" aria-label="添加新列表">添加新列表</button>
       </div>
       <div id="lists-container" class="lists-container"></div>
 
       <h2>同步设置</h2>
       <div class="sync-settings-box">
-        <label style="display:flex;align-items:center;gap:5px;">
-          <input type="checkbox" id="use-sync-storage" />
+        <label for="use-sync-storage" style="display:flex;align-items:center;gap:5px;"> <input type="checkbox"
+            id="use-sync-storage" />
           使用云同步
         </label>
-        <p class="sync-note" style="font-size:14px;color:#666;margin-top:5px;">
-          使用云同步可在同账号下的多个设备间共享列表数据，<br>
+        <p class="sync-note"> 使用云同步可在同账号下的多个设备间共享列表数据，<br>
           但有约 100 KB 的存储限制。
         </p>
       </div>
 
       <h2>数据导入导出</h2>
       <div class="import-export-box">
-        <button id="export-btn" class="secondary-btn">导出所有列表</button>
-        <button id="import-btn" class="secondary-btn">导入列表</button>
+        <button id="export-btn" class="secondary-btn" aria-label="导出所有列表">导出所有列表</button>
+        <button id="import-btn" class="secondary-btn" aria-label="导入列表">导入列表</button>
         <input type="file" id="import-file-input" accept=".json" style="display:none">
-        <div id="import-status" style="margin-top:10px; color:#cc0000;"></div>
+        <div id="import-status"></div>
       </div>
     </section>
 
     <section class="details-panel">
       <h2>列表详情</h2>
       <div id="selected-list-container" class="detail-box">
-        <label>列表名称:</label>
-        <input id="list-name" placeholder="列表名称" class="text-input">
+        <div class="list-name-row"> <label for="list-name">列表名称:</label>
+          <input id="list-name" placeholder="列表名称" class="text-input">
+          <button id="delete-list-btn" class="danger-btn" aria-label="删除当前列表">删除</button>
+        </div>
 
         <h3>匹配规则</h3>
-        <label><input type="checkbox" id="ignore-case"> 忽略大小写</label><br>
-        <label><input type="checkbox" id="lemmatize"> 词形还原(暂不可用)</label><br><br>
-
+        <div class="text-decoration-row">
+          <label for="ignore-case"><input type="checkbox" id="ignore-case"> 忽略大小写</label>
+          <label for="lemmatize"><input type="checkbox" id="lemmatize" disabled> 词形还原(即将推出)</label>
+        </div>
         <h3>高亮样式</h3>
         <div class="style-config">
-          <div>
-            <label>字体颜色:</label>
+          <div class="color-row">
+            <label for="color">字体颜色:</label>
             <input type="color" id="color">
           </div>
-          <div>
-            <label>背景颜色:</label>
+          <div class="color-row">
+            <label for="bgColor">背景颜色:</label>
             <input type="color" id="bgColor">
           </div>
         </div>
 
-        <label><input type="checkbox" id="bold"> 加粗</label><br>
-        <label><input type="checkbox" id="underline"> 下划线</label><br>
-        <label><input type="checkbox" id="strikethrough"> 删除线</label><br><br>
-
+        <div class="text-decoration-row">
+          <label for="bold"><input type="checkbox" id="bold"> 加粗</label>
+          <label for="underline"><input type="checkbox" id="underline"> 下划线</label>
+          <label for="strikethrough"><input type="checkbox" id="strikethrough"> 删除线</label>
+        </div>
         <h3>单词列表</h3>
         <div id="words-container" class="words-box"></div>
 
         <div class="add-word-row">
           <input id="new-word" placeholder="添加新单词" class="text-input">
-          <button id="add-word-btn" class="secondary-btn">添加</button>
+          <button id="add-word-btn" class="secondary-btn" aria-label="添加单词">添加</button>
         </div>
 
-        <div class="action-row">
-          <button id="delete-list-btn" class="danger-btn">删除当前列表</button>
-        </div>
       </div>
     </section>
   </div>
